@@ -1,3 +1,5 @@
+# termpix
+
 Draw images in an ANSI terminal! Requires that your terminal can show ANSI colours, and uses a font that can show the 'bottom half block' character (▄).
 
 Usage: `python3.6 termpix.py <filename|url>`
@@ -14,3 +16,11 @@ Try this command:
 
 This project is much inspired by following repository: 
 https://github.com/hopey-dishwasher/termpix
+
+# Installing
+`pip3 install -r requirements.txt
+`
+
+# License
+Apache 2.0 license
+
