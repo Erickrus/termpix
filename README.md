@@ -9,7 +9,8 @@ It will fill as much of the terminal as possible, while keping the aspect ratio 
 Try this command:
 `python3.6 termpix.py https://img.blogs.es/anexom/wp-content/uploads/2020/10/mario-destacada_E.jpg` . And you will see:
 
-![](https://github.com/Erickrus/termpix/blob/main/demo.png)
+![Demo](https://github.com/Erickrus/termpix/blob/main/demo.png)
 
-It is much inspired by this repository: 
+
+This project is much inspired by following repository: 
 https://github.com/hopey-dishwasher/termpix
