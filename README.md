@@ -6,7 +6,7 @@ Usage: `python3.6 termpix.py <filename|url>`
 
 filename can be any `image` file readable by the python 'PIL' library. 
 
-It will fill as much of the terminal as possible, while keping the aspect ratio of the input image. 
+It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. 
 
 Try this command:
 `python3.6 termpix.py https://img.blogs.es/anexom/wp-content/uploads/2020/10/mario-destacada_E.jpg` . And you will see:
