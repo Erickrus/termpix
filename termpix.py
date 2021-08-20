@@ -99,8 +99,44 @@ class TermPix:
         [ 0xbc, 0xbc, 0xbc ],[ 0xc6, 0xc6, 0xc6 ],[ 0xd0, 0xd0, 0xd0 ],[ 0xda, 0xda, 0xda ],[ 0xe4, 0xe4, 0xe4 ],
         [ 0xee, 0xee, 0xee ]], dtype=np.int32)
         
+        self.defaultBackgroundColor = [255,255,255]
+        self.defaultBackgroundColors = {
+            True: self.defaultBackgroundColor,
+            False: [self._find_color_index(np.array(self.defaultBackgroundColor))]
+        }
+        
+    def override_tx_image_size(self, width, height):
+        screenWidth, screenHeight = self.screenWidth, self.screenHeight
+        overrided = False
+        if (width != 0 and 
+            height != 0 and
+            width <= self.screenWidth and 
+            height <= self.screenHeight
+        ):
+            screenWidth, screenHeight = width, height
+            overrided = True
+        return screenWidth, screenHeight, overrided
     
-    def draw(self, imFilename, trueColor=False):
+    def _set_tx_pixel(self, pixel, colorMode):
+        if type(pixel) == type(int):
+            pixel = np.array([pixel])
+        else:   
+            pixel = np.array(pixel)
+        
+        if pixel.size > 1:
+            return (self.CSI + '%d;2;%d;%d;%d'+ self.SGR) % (
+                colorMode, 
+                int(pixel[0]), 
+                int(pixel[1]), 
+                int(pixel[2])
+            )
+        else:
+            return (self.CSI + "%d;5;%d" + self.SGR) % (
+                        colorMode,
+                        int(pixel)
+                    )
+                
+    def draw(self, imFilename, width=0, height=0, trueColor=False):
         
         if imFilename.lower().startswith("http"):
             data =  urllib.request.urlopen(imFilename).read()
@@ -111,38 +147,39 @@ class TermPix:
             im = Image.open(imFilename).convert("RGB")
         imWidth, imHeight = im.size
         imWhRatio = float(imWidth) / float(imHeight)
-        if imWhRatio >self.whRatio:
-            im = im.resize([self.screenWidth, int(self.screenWidth / imWhRatio)], Image.ANTIALIAS)
-        else:
-            im = im.resize([int(self.screenHeight * imWhRatio), self.screenHeight], Image.ANTIALIAS)
         
+        screenWidth, screenHeight, overrided = self.override_tx_image_size(width, height)
+        
+        if overrided:
+            im = im.resize([width, height], Image.ANTIALIAS)
+        else:
+            if imWhRatio > self.whRatio:
+                im = im.resize([screenWidth, int(screenWidth / imWhRatio)], Image.ANTIALIAS)
+            else:
+                im = im.resize([int(screenHeight * imWhRatio), screenHeight], Image.ANTIALIAS)
+            
         txWidth, txHeight = im.size
         data = np.array(im)
         textMat = np.zeros([txWidth, int(math.ceil(float(txHeight)/2.))*2]).tolist()
         
+        lines = []
         if not trueColor:
-            data = np.apply_along_axis(self.find_color_index, 2, data)
+            data = np.apply_along_axis(self._find_color_index, 2, data)
         
         for x in range(txWidth):
-            if trueColor:
-                textMat[x][-1] = self.CSI + '38;2;255;255;255' + self.SGR
-            else:
-                textMat[x][-1] = self.CSI + '38;5;15' + self.SGR                
+            textMat[x][-1] = self._set_tx_pixel(
+                self.defaultBackgroundColors[trueColor], 
+                self.colorMode[0]
+            )
                 
         line = ""
         for y in range(txHeight):
             for x in range(txWidth):
-                if trueColor:
-                    textMat[x][y] = (self.CSI + '%d;2;%d;%d;%d'+ self.SGR) %(
-                        self.colorMode[y % 2], 
-                        data[y,x,0], data[y,x,1], data[y,x,2] # RGB
-                    )
-                else:
-                    textMat[x][y] = (self.CSI + "%d;5;%d" + self.SGR) % (
-                        self.colorMode[y % 2],
-                        data[y,x]
-                    )
-                    
+                textMat[x][y] = self._set_tx_pixel(
+                    data[y,x], 
+                    self.colorMode[y % 2]
+                )
+                 
             if y % 2 == 0:
                 line = ""
                 for x in range(txWidth):
@@ -151,12 +188,13 @@ class TermPix:
                         textMat[x][y],
                         self.block,
                         self.CSI + '0' + self.SGR])
-                print(line)
+                lines.append(line)
+        return "\n".join(lines)
     
     # this function is rewritten in python with numpy
     # referenced
     # https://github.com/hopey-dishwasher/termpix/blob/c22d061fde753fe847b40b8ccdc3ad4515d2f47d/src/lib.rs#L57
-    def find_color_index(self, pixel, startIndex=0):
+    def _find_color_index(self, pixel, startIndex=0):
         return np.argmin(
             np.sum(
                 (np.square(
@@ -172,11 +210,18 @@ class TermPix:
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         allow_abbrev=False, 
-        usage='python3.6 termpix.py <filename|url> [--true-color|--true-colour]'
+        usage='python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]'
     )
     parser.add_argument("filename", type=str)
     parser.add_argument("--true-color", "--true-colour", action='store_true')
+    parser.add_argument("--width", type=int, default=0)
+    parser.add_argument("--height", type=int, default=0)
     
     args = vars(parser.parse_args())
-    TermPix().draw(args["filename"], trueColor = args["true_color"])
-    
+    txIm = TermPix().draw(
+        args["filename"], 
+        width = args["width"],
+        height = args["height"],
+        trueColor = args["true_color"]
+    )
+    print(txIm)
