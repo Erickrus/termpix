@@ -4,7 +4,7 @@ Draw images in an ANSI terminal! Requires that your terminal can show ANSI colou
 
 Usage: `python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
 
-filename can be any `image` file readable by the python 'PIL' library. 
+filename or url can be any `image` file readable by the python 'PIL' library. 
 
 It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. Use --width or --height to override this.
 
