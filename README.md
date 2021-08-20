@@ -2,7 +2,7 @@
 
 Draw images in an ANSI terminal! Requires that your terminal can show ANSI colours, and uses a font that can show the 'bottom half block' character (▄).
 
-Usage: `python3.6 termpix.py <filename|url> [--true-color|--true-colour]`
+Usage: `python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
 
 filename can be any `image` file readable by the python 'PIL' library. 
 
