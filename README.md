@@ -6,7 +6,7 @@ Usage: `python3.6 termpix.py <filename|url> [--width <width>] [--height <height>
 
 filename can be any `image` file readable by the python 'PIL' library. 
 
-It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. 
+It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. Use --width or --height to override this.
 
 Try this command:
 `python3.6 termpix.py https://img.blogs.es/anexom/wp-content/uploads/2020/10/mario-destacada_E.jpg --true-color` . And you will see:
