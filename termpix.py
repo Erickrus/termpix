@@ -136,7 +136,7 @@ class TermPix:
                         int(pixel)
                     )
                 
-    def draw(self, imFilename, width=0, height=0, trueColor=False):
+    def draw_tx_im(self, imFilename, width=0, height=0, trueColor=False):
         
         if imFilename.lower().startswith("http"):
             data =  urllib.request.urlopen(imFilename).read()
@@ -218,7 +218,7 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=0)
     
     args = vars(parser.parse_args())
-    txIm = TermPix().draw(
+    txIm = TermPix().draw_tx_im(
         args["filename"], 
         width = args["width"],
         height = args["height"],
