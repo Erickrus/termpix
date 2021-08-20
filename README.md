@@ -14,7 +14,7 @@ Try this command:
 ![Demo](https://github.com/Erickrus/termpix/blob/main/demo.png)
 
 
-This project is much inspired by following repository: 
+This project is much inspired by the following repository: 
 https://github.com/hopey-dishwasher/termpix
 
 # Installing
