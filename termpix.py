@@ -2,7 +2,7 @@
 '''
 TermPix
 Author: Hu, Ying-Hao (hyinghao@hotmail.com)
-Version: 0.2
+Version: 0.3
 Last modification date: 2021-08-21
 
 Copyright 2021 Hu, Ying-Hao
@@ -108,7 +108,7 @@ class TermPix:
         show_screen_offset = 0
         if show_grid:
             show_screen_offset = 1
-        screen_width = tsize.columns
+        screen_width = tsize.columns - show_screen_offset * 2
         screen_height = (tsize.lines - 1 - show_screen_offset) * 2 # keep the last prompt line
         whRatio = float(screen_width) / float(screen_height)
         
@@ -147,9 +147,6 @@ class TermPix:
                 
     def draw_tx_im(self, im_filename, width=0, height=0, true_color=False, show_grid=False):
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info(show_grid)
-        #if show_grid:
-        #    self.screen_height-=1
-        #    self.wh_ratio = self.screen_width / self.screen_height
         
         if im_filename.lower().startswith("http"):
             data =  urllib.request.urlopen(im_filename).read()
@@ -160,7 +157,6 @@ class TermPix:
             im = Image.open(im_filename).convert("RGB")
         
         im_width, im_height = im.size
-        #im_height -= 1
         im_wh_ratio = float(im_width) / float(im_height)
         
         screen_width, screen_height, overrided = self._override_tx_image_size(width, height)
@@ -172,11 +168,6 @@ class TermPix:
                 im = im.resize([screen_width, int(screen_width / im_wh_ratio)], Image.ANTIALIAS)
             else:
                 im = im.resize([int(screen_height * im_wh_ratio), screen_height], Image.ANTIALIAS)
-        
-        #im = im.resize([im.size[0], im.size[1]-1])
-        #im2 = Image.new('RGB', [im.size[0], im.size[1]+1], color=(255, 255, 255))
-        #im2.paste(im, (0,1))
-        #im = im2
         
         tx_width, tx_height = im.size
         data = np.array(im)
@@ -248,11 +239,12 @@ if __name__ == "__main__":
     parser.add_argument("--show-grid", action='store_true')
     
     args = vars(parser.parse_args())
-    txIm = TermPix().draw_tx_im(
+    tx_im = TermPix().draw_tx_im(
         args["filename"], 
         width = args["width"],
         height = args["height"],
         true_color = args["true_color"],
         show_grid= args["show_grid"]
     )
-    print(txIm)
+    print(tx_im)
+    
