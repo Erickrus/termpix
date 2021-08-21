@@ -36,7 +36,7 @@ class TermPix:
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info()
         
         # https://notes.burke.libbey.me/ansi-escape-codes/
-        self.color_mode = [48, 38] # foreground color, background color
+        self.color_mode = [48, 38] # background color, foreground color
         self.csi = '\x1b[' # Control Sequence Introducer
         self.sgr = 'm' # Select Graphics Rendition
         
@@ -180,7 +180,7 @@ class TermPix:
         for x in range(tx_width):
             text_mat[x][-1] = self._set_tx_pixel(
                 self.default_background_colors[true_color], 
-                self.color_mode[0]
+                self.color_mode[1] # foreground
             )
                 
         line = ""
