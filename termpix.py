@@ -31,21 +31,18 @@ from PIL import Image
 from io import BytesIO
 
 class TermPix:
+    
     def __init__(self):
-        tsize = os.get_terminal_size()
-        
-        self.screenWidth = tsize.columns
-        self.screenHeight = tsize.lines * 2
-        self.whRatio = float(self.screenWidth) / float(self.screenHeight)
+        self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info()
         
         # https://notes.burke.libbey.me/ansi-escape-codes/
-        self.colorMode = [38, 48] # foreground color, background color
-        self.CSI = '\x1b[' # Control Sequence Introducer
-        self.SGR = 'm' # Select Graphics Rendition
+        self.color_mode = [38, 48] # foreground color, background color
+        self.csi = '\x1b[' # Control Sequence Introducer
+        self.sgr = 'm' # Select Graphics Rendition
         
         self.block = "▄"
         
-        self.ansiColors = np.array([
+        self.ansi_colors = np.array([
         [ 0x00, 0x00, 0x00 ],[ 0x80, 0x00, 0x00 ],[ 0x00, 0x80, 0x00 ],[ 0x80, 0x80, 0x00 ],[ 0x00, 0x00, 0x80 ],
         [ 0x80, 0x00, 0x80 ],[ 0x00, 0x80, 0x80 ],[ 0xc0, 0xc0, 0xc0 ],[ 0x80, 0x80, 0x80 ],[ 0xff, 0x00, 0x00 ],
         [ 0x00, 0xff, 0x00 ],[ 0xff, 0xff, 0x00 ],[ 0x00, 0x00, 0xff ],[ 0xff, 0x00, 0xff ],[ 0x00, 0xff, 0xff ],
@@ -99,113 +96,123 @@ class TermPix:
         [ 0xbc, 0xbc, 0xbc ],[ 0xc6, 0xc6, 0xc6 ],[ 0xd0, 0xd0, 0xd0 ],[ 0xda, 0xda, 0xda ],[ 0xe4, 0xe4, 0xe4 ],
         [ 0xee, 0xee, 0xee ]], dtype=np.int32)
         
-        self.defaultBackgroundColor = [255,255,255]
-        self.defaultBackgroundColors = {
-            True: self.defaultBackgroundColor,
-            False: [self._find_color_index(np.array(self.defaultBackgroundColor))]
+        self.default_background_color = [255,255,255]
+        self.default_background_colors = {
+            True: self.default_background_color,
+            False: [self._find_color_index(np.array(self.default_background_color))]
         }
         
-    def override_tx_image_size(self, width, height):
-        screenWidth, screenHeight = self.screenWidth, self.screenHeight
+    def _update_terminal_info(self):
+        tsize = os.get_terminal_size()
+        
+        screen_width = tsize.columns
+        screen_height = tsize.lines * 2
+        whRatio = float(screen_width) / float(screen_height)
+        
+        return screen_width, screen_height, whRatio
+        
+    def _override_tx_image_size(self, width, height):
+        screen_width, screen_height = self.screen_width, self.screen_height
         overrided = False
         if (width != 0 and 
             height != 0 and
-            width <= self.screenWidth and 
-            height <= self.screenHeight
+            width <= self.screen_width and 
+            height <= self.screen_height
         ):
-            screenWidth, screenHeight = width, height
+            screen_width, screen_height = width, height
             overrided = True
-        return screenWidth, screenHeight, overrided
+        return screen_width, screen_height, overrided
     
-    def _set_tx_pixel(self, pixel, colorMode):
+    def _set_tx_pixel(self, pixel, color_mode):
         if type(pixel) == type(int):
             pixel = np.array([pixel])
         else:   
             pixel = np.array(pixel)
         
         if pixel.size > 1:
-            return (self.CSI + '%d;2;%d;%d;%d'+ self.SGR) % (
-                colorMode, 
+            return (self.csi + '%d;2;%d;%d;%d'+ self.sgr) % (
+                color_mode, 
                 int(pixel[0]), 
                 int(pixel[1]), 
                 int(pixel[2])
             )
         else:
-            return (self.CSI + "%d;5;%d" + self.SGR) % (
-                        colorMode,
-                        int(pixel)
-                    )
+            return (self.csi + "%d;5;%d" + self.sgr) % (
+                color_mode,
+                int(pixel)
+            )
                 
-    def draw_tx_im(self, imFilename, width=0, height=0, trueColor=False):
+    def draw_tx_im(self, im_filename, width=0, height=0, true_color=False):
+        self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info()
         
-        if imFilename.lower().startswith("http"):
-            data =  urllib.request.urlopen(imFilename).read()
+        if im_filename.lower().startswith("http"):
+            data =  urllib.request.urlopen(im_filename).read()
             b = BytesIO()
             b.write(data)
             im = Image.open(b).convert("RGB")
         else:
-            im = Image.open(imFilename).convert("RGB")
-        imWidth, imHeight = im.size
-        imWhRatio = float(imWidth) / float(imHeight)
+            im = Image.open(im_filename).convert("RGB")
+        im_width, im_height = im.size
+        im_wh_ratio = float(im_width) / float(im_height)
         
-        screenWidth, screenHeight, overrided = self.override_tx_image_size(width, height)
+        screen_width, screen_height, overrided = self._override_tx_image_size(width, height)
         
         if overrided:
             im = im.resize([width, height], Image.ANTIALIAS)
         else:
-            if imWhRatio > self.whRatio:
-                im = im.resize([screenWidth, int(screenWidth / imWhRatio)], Image.ANTIALIAS)
+            if im_wh_ratio > self.wh_ratio:
+                im = im.resize([screen_width, int(screen_width / im_wh_ratio)], Image.ANTIALIAS)
             else:
-                im = im.resize([int(screenHeight * imWhRatio), screenHeight], Image.ANTIALIAS)
+                im = im.resize([int(screen_height * im_wh_ratio), screen_height], Image.ANTIALIAS)
             
-        txWidth, txHeight = im.size
+        tx_width, tx_height = im.size
         data = np.array(im)
-        textMat = np.zeros([txWidth, int(math.ceil(float(txHeight)/2.))*2]).tolist()
+        text_mat = np.zeros([tx_width, int(math.ceil(float(tx_height)/2.))*2]).tolist()
         
         lines = []
-        if not trueColor:
+        if not true_color:
             data = np.apply_along_axis(self._find_color_index, 2, data)
         
-        for x in range(txWidth):
-            textMat[x][-1] = self._set_tx_pixel(
-                self.defaultBackgroundColors[trueColor], 
-                self.colorMode[0]
+        for x in range(tx_width):
+            text_mat[x][-1] = self._set_tx_pixel(
+                self.default_background_colors[true_color], 
+                self.color_mode[0]
             )
                 
         line = ""
-        for y in range(txHeight):
-            for x in range(txWidth):
-                textMat[x][y] = self._set_tx_pixel(
+        for y in range(tx_height):
+            for x in range(tx_width):
+                text_mat[x][y] = self._set_tx_pixel(
                     data[y,x], 
-                    self.colorMode[y % 2]
+                    self.color_mode[y % 2]
                 )
                  
             if y % 2 == 0:
                 line = ""
-                for x in range(txWidth):
+                for x in range(tx_width):
                     line += "".join([
-                        textMat[x][y-1],
-                        textMat[x][y],
+                        text_mat[x][y-1],
+                        text_mat[x][y],
                         self.block,
-                        self.CSI + '0' + self.SGR])
+                        self.csi + '0' + self.sgr])
                 lines.append(line)
         return "\n".join(lines)
     
     # this function is rewritten in python with numpy
     # referenced
     # https://github.com/hopey-dishwasher/termpix/blob/c22d061fde753fe847b40b8ccdc3ad4515d2f47d/src/lib.rs#L57
-    def _find_color_index(self, pixel, startIndex=0):
+    def _find_color_index(self, pixel, start_index=0):
         return np.argmin(
             np.sum(
                 (np.square(
-                    self.ansiColors[startIndex:,] - 
+                    self.ansi_colors[start_index:,] - 
                     np.repeat(
-                        np.expand_dims(pixel, 0), 256-startIndex, axis = 0
+                        np.expand_dims(pixel, 0), 256-start_index, axis = 0
                     ).astype(np.int32)
                 )).astype(np.int32), 
                 axis = -1
             )
-        ) + startIndex
+        ) + start_index
         
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
@@ -222,6 +229,6 @@ if __name__ == "__main__":
         args["filename"], 
         width = args["width"],
         height = args["height"],
-        trueColor = args["true_color"]
+        true_color = args["true_color"]
     )
     print(txIm)
