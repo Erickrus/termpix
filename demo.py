@@ -27,19 +27,18 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image
 
-x = np.linspace(0., np.pi*2.)
-y = np.log(x)
-y2 = np.sin(x)
-y3 = np.cos(x)
-plt.plot(x, y)
-plt.plot(x, y2)
-plt.plot(x, y3)
+if __name__ == "__main__":
+    t=np.arange(0,2*np.pi,0.1)
+    x=16*np.sin(t)**3
+    y=13*np.cos(t)-5*np.cos(2*t)-2*np.cos(3*t)-np.cos(4*t)
 
-plt.axis('off')
-b = BytesIO()
-plt.savefig(b)
-im = Image.open(b)
+    plt.plot(x,y,color="red")
 
-print(TermPix().draw_tx_im(im))
+    plt.axis('off')
+    b = BytesIO()
+    plt.savefig(b)
+    im = Image.open(b)
+
+    print(TermPix().draw_tx_im(im, true_color=True))
 
 
