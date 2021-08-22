@@ -148,13 +148,16 @@ class TermPix:
     def draw_tx_im(self, im_filename, width=0, height=0, true_color=False, show_grid=False):
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info(show_grid)
         
-        if im_filename.lower().startswith("http"):
-            data =  urllib.request.urlopen(im_filename).read()
-            b = BytesIO()
-            b.write(data)
-            im = Image.open(b).convert("RGB")
+        if str(type(im_filename)).index('PIL') >= 0 and  str(type(im_filename)).index('ImageFile') >= 0:
+            im = im_filename.convert('RGB')
         else:
-            im = Image.open(im_filename).convert("RGB")
+            if im_filename.lower().startswith("http"):
+                data =  urllib.request.urlopen(im_filename).read()
+                b = BytesIO()
+                b.write(data)
+                im = Image.open(b).convert("RGB")
+            else:
+                im = Image.open(im_filename).convert("RGB")
         
         im_width, im_height = im.size
         im_wh_ratio = float(im_width) / float(im_height)
