@@ -27,11 +27,15 @@ import matplotlib.pyplot as plt
 from io import BytesIO
 from PIL import Image
 
-if __name__ == "__main__":
+def make_heart_shape():
     t=np.arange(0,2*np.pi,0.1)
     x=16*np.sin(t)**3
     y=13*np.cos(t)-5*np.cos(2*t)-2*np.cos(3*t)-np.cos(4*t)
+    return x, y
 
+if __name__ == "__main__":
+
+    x, y = make_heart_shape()
     plt.plot(x,y,color="red")
 
     plt.axis('off')
