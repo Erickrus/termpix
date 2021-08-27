@@ -13,7 +13,7 @@ Try this command:
 
 ![Demo](https://github.com/Erickrus/termpix/blob/main/demo.png)
 
-This library also extend to play video in terminal, you can try the `python3.6 video-demo.py <mp4_filename>`
+This library is also extended to play video in terminal, you can try the `python3.6 video-demo.py <mp4_filename>`
 
 This project is much inspired by the following repository: 
 https://github.com/hopey-dishwasher/termpix
