@@ -20,7 +20,7 @@ def main(mp4_filename):
         print(t.draw_tx_im(im, true_color=True))
         t.gotoxy(1,1)
         time.sleep(1. / float(fps))
-
+    v_in.close()
     t.clear_screen()
 
 if __name__ == "__main__":
