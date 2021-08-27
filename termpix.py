@@ -93,6 +93,13 @@ class TermPix:
     def clear_screen(self):
         print("%s2J" % self.csi, end='')
 
+    def show_cursor(self):
+        print("%s?25h" % self.csi, end='')
+
+    def hide_cursor(self):
+        print("%s?25l" % self.csi, end='')
+
+
     def _update_terminal_info(self, show_grid=False):
         tsize = os.get_terminal_size()
         
@@ -189,11 +196,10 @@ class TermPix:
             if y % 2 == 1:
                 line = ""
                 for x in range(tx_width):
-                    line += "".join([
-                        text_mat[x][y],
-                        text_mat[x][y-1],
-                        self.block,
-                        self.csi + '0' + self.sgr])
+                    line += text_mat[x][y]+ \
+                        text_mat[x][y-1]+ \
+                        self.block+ \
+                        self.csi + '0' + self.sgr
                 lines.append(line)
                 
         if show_grid:
