@@ -87,6 +87,12 @@ class TermPix:
             False: [self._find_color_index(np.array(self.default_background_color))]
         }
         
+    def gotoxy(self, x, y):
+        print("%s%d;%df" % (self.csi, x, y), end='')
+
+    def clear_screen(self):
+        print("%s2J" % self.csi, end='')
+
     def _update_terminal_info(self, show_grid=False):
         tsize = os.get_terminal_size()
         
@@ -132,9 +138,9 @@ class TermPix:
     
     def draw_tx_im(self, im_filename, width=0, height=0, true_color=False, show_grid=False):
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info(show_grid)
-        
+       
         # matches PIL ImageFile class
-        if str(type(im_filename)).find('PIL') >= 0 and str(type(im_filename)).find('ImageFile') >= 0:
+        if str(type(im_filename)).find('PIL') >= 0 and str(type(im_filename)).find('Image') >= 0:
             im = im_filename.convert('RGB')
         else:
             if im_filename.lower().startswith("http"):
