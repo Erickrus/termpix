@@ -5,7 +5,10 @@ import imageio
 import numpy as np
 import sys
 import time
-
+"""
+apt install sox ffmpeg
+pip3 install imageio imageio-ffmpeg
+"""
 def main(mp4_filename):
     t = TermPix()
 
