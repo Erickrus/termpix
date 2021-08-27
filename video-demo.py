@@ -17,8 +17,6 @@ def main(mp4_filename):
         print(t.draw_tx_im(im, true_color=True))
         t.gotoxy(1,1)
         time.sleep(1. / float(fps))
-        if i > 200:
-            break
 
     t.clear_screen()
 
