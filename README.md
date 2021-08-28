@@ -15,6 +15,8 @@ Try this command:
 
 This library is also extended to play video in terminal, you can try the `python3.6 video-demo.py <mp4_filename>`
 
+https://asciinema.org/a/yuogBz7sZaSwLmRBN4BGcTv6v
+
 This project is much inspired by the following repository: 
 https://github.com/hopey-dishwasher/termpix
 
