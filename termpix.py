@@ -2,7 +2,7 @@
 '''
 TermPix
 Author: Hu, Ying-Hao (hyinghao@hotmail.com)
-Version: 0.3
+Version: 0.4
 Last modification date: 2021-08-21
 
 Copyright 2021 Hu, Ying-Hao
