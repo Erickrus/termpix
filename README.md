@@ -4,7 +4,7 @@ Draw images in an ANSI terminal! Requires that your terminal can show ANSI colou
 
 Usage: `python3.9 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
 
-filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. If you type camera as the filename, you can view your camera video.
+filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. If you type camera as the filename, you can view your webcam video.
 
 It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. Use --width or --height to override this.
 
