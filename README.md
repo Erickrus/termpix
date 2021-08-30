@@ -21,11 +21,11 @@ This project is much inspired by the following repository:
 https://github.com/hopey-dishwasher/termpix
 
 # Installing
-`
-# if you want to play video, followings are required
-# apt install portaudio ffmpeg
-pip3 install -r requirements.txt
-`
+`# if you want to play video, followings are required`
+
+`# apt install portaudio ffmpeg`
+
+`pip3 install -r requirements.txt`
 
 # License
 Apache 2.0 license
