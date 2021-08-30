@@ -4,7 +4,7 @@ Draw images in an ANSI terminal! Requires that your terminal can show ANSI colou
 
 Usage: `python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
 
-filename or url can be any `image` file readable by the python 'PIL' library. 
+filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. 
 
 It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. Use --width or --height to override this.
 
@@ -13,7 +13,7 @@ Try this command:
 
 ![Demo](https://github.com/Erickrus/termpix/blob/main/demo.png)
 
-This library is also extended to play video in terminal, you can try the `python3.6 video-demo.py <mp4_filename>`
+This library is also extended to play video in terminal (with audio), you can try the `python3.6 termpix.py <mp4_filename>`
 
 [![asciicast](https://asciinema.org/a/yuogBz7sZaSwLmRBN4BGcTv6v.svg)](https://asciinema.org/a/yuogBz7sZaSwLmRBN4BGcTv6v)
 
