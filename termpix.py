@@ -20,15 +20,45 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 '''
-
 import argparse
+import datetime
 import math
 import numpy as np
 import os
 import urllib.request
+import threading
+import time
+
 
 from PIL import Image
 from io import BytesIO
+
+class AudioThread(threading.Thread):
+    def __init__(self, audio_filename):
+        threading.Thread.__init__(self)
+        self.audio_filename = audio_filename
+        self.is_terminated = False
+
+    def run(self):
+        import pyaudio
+        import wave
+        chunk_size = 1024
+        wave_file = wave.open(self.audio_filename, 'rb')
+        p = pyaudio.PyAudio()
+        stream = p.open(
+            format=p.get_format_from_width(wave_file.getsampwidth()),
+            channels=wave_file.getnchannels(),
+            rate=wave_file.getframerate(),
+            output=True
+        )
+        data = wave_file.readframes(chunk_size)
+        while data != b'' and not self.is_terminated :
+            stream.write(data)
+            data = wave_file.readframes(chunk_size)
+        stream.stop_stream()
+        stream.close()
+        p.terminate()
+        os.system("rm %s" % self.audio_filename)
 
 class TermPix:
     
@@ -227,7 +257,82 @@ class TermPix:
                 axis = -1
             )
         ) + start_index
+
+
+    def video_wrapper(self, mp4_filename, func, true_color):
+        self.hide_cursor()
+        self.clear_screen()
+        self.gotoxy(1,1)
+        audio_thread = AudioThread(mp4_filename)
+        try:
+            func(mp4_filename, audio_thread, true_color) # play_video
+        except KeyboardInterrupt:
+            audio_thread.is_terminated = True
+            audio_thread.join()
+            pass
+        self.show_cursor()
+        self.clear_screen()
+        self.gotoxy(1,1)
+
+    def play_video(self, mp4_filename, true_color=True):
+        self.video_wrapper(mp4_filename, self._play_video, true_color)
+
+    def _play_video(self, mp4_filename, audio_thread, true_color):
+        import imageio
+        support_audio = True
+        timestamp = int(datetime.datetime.now().timestamp())
+        ext = os.path.splitext(mp4_filename)[-1]
+        try:
+            os.mkdir("tmp")
+        except:
+            pass
+        proposed_video_filename = "tmp/tp_%s%s" % (timestamp, ext.lower())
+        proposed_audio_filename = "tmp/tp_%s%s" % (timestamp, '.wav')
+
+        if mp4_filename.lower() == 'camera':
+            v_in = imageio.get_reader('<video0>')
+            support_audio = False
+        elif mp4_filename.lower().startswith("http"):
+            data =  urllib.request.urlopen(mp4_filename).read()
+            with open(proposed_video_filename, "wb") as f:
+                f.write(data)
+            os.system("ffmpeg -y -v quiet -i %s %s" % (proposed_video_filename, proposed_audio_filename))
+            os.system("rm %s" % proposed_video_filename)
+            v_in = imageio.get_reader(BytesIO(data), 'ffmpeg')
+            support_audio = True
+        else:
+            v_in = imageio.get_reader(mp4_filename, 'ffmpeg')
+            os.system("ffmpeg -y -v quiet -i %s %s" % (mp4_filename, proposed_audio_filename))
+            support_audio = True
+
+        # audio part goes here
+        if support_audio:
+            audio_thread.audio_filename = proposed_audio_filename
+            audio_thread.start()
+
+        fps = v_in.get_meta_data()['fps']
+
+        play_start_time = datetime.datetime.now()
+        frame_duration = 1. / float(fps)
+
+        sec = datetime.timedelta(seconds=1.)
+        for i, im in enumerate(v_in):
+            current_time = datetime.datetime.now()
+            if (current_time - play_start_time)/sec <= float(i+1) * frame_duration:
+                im = Image.fromarray(im)
+                curr_tx_im = self.draw_tx_im(im, true_color=true_color)
+                print(curr_tx_im)
+                self.gotoxy(1,1)
+            # else: 
+                # current_time is left behind, skip the drawing
         
+            current_time = datetime.datetime.now()
+            sleep_time = frame_duration - (current_time - play_start_time)/sec + float(i) * frame_duration
+            if sleep_time > 0.:
+                time.sleep(sleep_time)
+        v_in.close()
+
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         allow_abbrev=False, 
@@ -240,12 +345,17 @@ if __name__ == "__main__":
     parser.add_argument("--show-grid", action='store_true')
     
     args = vars(parser.parse_args())
-    tx_im = TermPix().draw_tx_im(
-        args["filename"], 
-        width = args["width"],
-        height = args["height"],
-        true_color = args["true_color"],
-        show_grid= args["show_grid"]
-    )
-    print(tx_im)
+    if (args["filename"].lower().endswith("mp4") or 
+        args["filename"].lower().endswith("mov") or 
+        args["filename"].lower() == "camera"):
+        TermPix().play_video(args["filename"], true_color = args["true_color"])
+    else:
+        tx_im = TermPix().draw_tx_im(
+            args["filename"], 
+            width = args["width"],
+            height = args["height"],
+            true_color = args["true_color"],
+            show_grid= args["show_grid"]
+        )
+        print(tx_im)
     
