@@ -2,7 +2,7 @@
 '''
 TermPix
 Author: Hu, Ying-Hao (hyinghao@hotmail.com)
-Version: 0.4
+Version: 0.5
 Last modification date: 2021-08-21
 
 Copyright 2021 Hu, Ying-Hao
@@ -26,12 +26,19 @@ import math
 import numpy as np
 import os
 import urllib.request
+import tempfile
 import threading
 import time
+import sys
 
+
+
+from ctypes import *
 
 from PIL import Image
 from io import BytesIO
+
+
 
 class AudioThread(threading.Thread):
     def __init__(self, audio_filename):
@@ -40,11 +47,28 @@ class AudioThread(threading.Thread):
         self.is_terminated = False
 
     def run(self):
+        '''# this make the sound not sync with video
+        if sys.platform.lower() == "linux":
+            # From alsa-lib Git 3fd4ab9be0db7c7430ebd258f2717a976381715d
+            # $ grep -rn snd_lib_error_handler_t
+            # include/error.h:59:typedef void (*snd_lib_error_handler_t)(const char *file, int line, const char *function, int err, const char *fmt, ...) /* __attribute__ ((format (printf, 5, 6))) */;
+            # Define our error handler type
+            ERROR_HANDLER_FUNC = CFUNCTYPE(None, c_char_p, c_int, c_char_p, c_int, c_char_p)
+            def py_error_handler(filename, line, function, err, fmt):
+                pass
+            c_error_handler = ERROR_HANDLER_FUNC(py_error_handler)
+
+            asound = cdll.LoadLibrary('libasound.so.2')
+            # Set error handler
+            asound.snd_lib_error_set_handler(None)
+        '''
+        
         import pyaudio
         import wave
-        chunk_size = 1024
         wave_file = wave.open(self.audio_filename, 'rb')
         p = pyaudio.PyAudio()
+        chunk_size = 1024
+        
         stream = p.open(
             format=p.get_format_from_width(wave_file.getsampwidth()),
             channels=wave_file.getnchannels(),
@@ -52,8 +76,11 @@ class AudioThread(threading.Thread):
             output=True
         )
         data = wave_file.readframes(chunk_size)
-        while data != b'' and not self.is_terminated :
-            stream.write(data)
+        while data != b'' and not self.is_terminated:
+            try:
+                stream.write(data)
+            except:
+                pass
             data = wave_file.readframes(chunk_size)
         stream.stop_stream()
         stream.close()
@@ -259,13 +286,27 @@ class TermPix:
         ) + start_index
 
 
-    def video_wrapper(self, mp4_filename, func, true_color):
+    def is_tty(self):
+        res = False
+        try:
+            res = type(os.environ["SSH_TTY"]) == str
+        except:
+            pass
+        return res
+
+    def video_wrapper(self, mp4_filename, func, true_color, mirror):
         self.hide_cursor()
         self.clear_screen()
         self.gotoxy(1,1)
         audio_thread = AudioThread(mp4_filename)
         try:
-            func(mp4_filename, audio_thread, true_color) # play_video
+            if sys.platform.lower() == "linux":
+                os.system("jack_control stop > /dev/null")
+                os.system("pulseaudio --kill")
+                os.system("jack_control start > /dev/null")
+                os.system("pulseaudio --start")
+                #time.sleep(0.05)
+            func(mp4_filename, audio_thread, true_color, mirror) # play_video
         except KeyboardInterrupt:
             audio_thread.is_terminated = True
             audio_thread.join()
@@ -274,22 +315,22 @@ class TermPix:
         self.clear_screen()
         self.gotoxy(1,1)
 
-    def play_video(self, mp4_filename, true_color=True):
-        self.video_wrapper(mp4_filename, self._play_video, true_color)
+    def play_video(self, mp4_filename, true_color=True, mirror=False):
+        self.video_wrapper(mp4_filename, self._play_video, true_color, mirror)
 
-    def _play_video(self, mp4_filename, audio_thread, true_color):
+    def _play_video(self, mp4_filename, audio_thread, true_color, mirror):
         import imageio
         support_audio = True
         timestamp = int(datetime.datetime.now().timestamp())
         ext = os.path.splitext(mp4_filename)[-1]
-        try:
-            os.mkdir("tmp")
-        except:
-            pass
-        proposed_video_filename = "tmp/tp_%s%s" % (timestamp, ext.lower())
-        proposed_audio_filename = "tmp/tp_%s%s" % (timestamp, '.wav')
+
+        temp_dir = tempfile.gettempdir()
+        proposed_video_filename = "%s/tp_%s%s" % (temp_dir, timestamp, ext.lower())
+        proposed_audio_filename = "%s/tp_%s%s" % (temp_dir, timestamp, '.wav')
 
         if mp4_filename.lower() == 'camera':
+            if self.is_tty():
+                raise Exception("start camera via tty is not allowed")
             v_in = imageio.get_reader('<video0>')
             support_audio = False
         elif mp4_filename.lower().startswith("http"):
@@ -306,7 +347,7 @@ class TermPix:
             support_audio = True
 
         # audio part goes here
-        if support_audio:
+        if support_audio and not self.is_tty(): # you wont get audio from ssh client
             audio_thread.audio_filename = proposed_audio_filename
             audio_thread.start()
 
@@ -320,6 +361,8 @@ class TermPix:
             current_time = datetime.datetime.now()
             if (current_time - play_start_time)/sec <= float(i+1) * frame_duration:
                 im = Image.fromarray(im)
+                if mp4_filename.lower() == 'camera' and mirror:
+                    im = im.transpose(Image.FLIP_LEFT_RIGHT)
                 curr_tx_im = self.draw_tx_im(im, true_color=true_color)
                 print(curr_tx_im)
                 self.gotoxy(1,1)
@@ -343,12 +386,17 @@ if __name__ == "__main__":
     parser.add_argument("--width", type=int, default=0)
     parser.add_argument("--height", type=int, default=0)
     parser.add_argument("--show-grid", action='store_true')
-    
+    parser.add_argument("--mirror", action='store_true')
+
     args = vars(parser.parse_args())
     if (args["filename"].lower().endswith("mp4") or 
         args["filename"].lower().endswith("mov") or 
         args["filename"].lower() == "camera"):
-        TermPix().play_video(args["filename"], true_color = args["true_color"])
+        TermPix().play_video(
+            args["filename"], 
+            true_color = args["true_color"],
+            mirror = args["mirror"]
+        )
     else:
         tx_im = TermPix().draw_tx_im(
             args["filename"], 
