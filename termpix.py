@@ -27,17 +27,15 @@ import numpy as np
 import os
 import urllib.request
 import tempfile
+import termios
 import threading
 import time
 import sys
-
-
 
 from ctypes import *
 
 from PIL import Image
 from io import BytesIO
-
 
 
 class AudioThread(threading.Thread):
@@ -87,9 +85,50 @@ class AudioThread(threading.Thread):
         p.terminate()
         os.system("rm %s" % self.audio_filename)
 
+class Terminal:
+    def __init__(self):
+        self.csi = '\x1b[' # Control Sequence Introducer
+        self.sgr = 'm' # Select Graphics Rendition
+
+    def getkey(self):
+        fd = sys.stdin.fileno()
+        o = termios.tcgetattr(fd)
+        n = termios.tcgetattr(fd)
+        n[3] = n[3] & ~termios.ICANON & ~termios.ECHO
+        n[6][termios.VMIN] = 1
+        n[6][termios.VTIME] = 0
+        termios.tcsetattr(fd, termios.TCSANOW, n)
+        c = None
+        try:
+            c = os.read(fd, 1)
+        finally:
+            termios.tcsetattr(fd, termios.TCSAFLUSH, o)
+        return c.decode('utf-8')
+
+    def is_tty(self):
+        res = False
+        try:
+            res = type(os.environ["SSH_TTY"]) == str
+        except:
+            pass
+        return res
+
+    def gotoxy(self, x, y):
+        print("%s%d;%df" % (self.csi, x, y), end='')
+
+    def clear_screen(self):
+        print("%s2J" % self.csi, end='')
+
+    def show_cursor(self):
+        print("%s?25h" % self.csi, end='')
+
+    def hide_cursor(self):
+        print("%s?25l" % self.csi, end='')
+
 class TermPix:
     
     def __init__(self):
+        self.term = Terminal()
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info()
         
         # https://notes.burke.libbey.me/ansi-escape-codes/
@@ -144,18 +183,6 @@ class TermPix:
             False: [self._find_color_index(np.array(self.default_background_color))]
         }
         
-    def gotoxy(self, x, y):
-        print("%s%d;%df" % (self.csi, x, y), end='')
-
-    def clear_screen(self):
-        print("%s2J" % self.csi, end='')
-
-    def show_cursor(self):
-        print("%s?25h" % self.csi, end='')
-
-    def hide_cursor(self):
-        print("%s?25l" % self.csi, end='')
-
 
     def _update_terminal_info(self, show_grid=False):
         tsize = os.get_terminal_size()
@@ -286,21 +313,14 @@ class TermPix:
         ) + start_index
 
 
-    def is_tty(self):
-        res = False
-        try:
-            res = type(os.environ["SSH_TTY"]) == str
-        except:
-            pass
-        return res
-
     def video_wrapper(self, mp4_filename, func, true_color, mirror):
-        self.hide_cursor()
-        self.clear_screen()
-        self.gotoxy(1,1)
+        self.term.hide_cursor()
+        self.term.clear_screen()
+        self.term.gotoxy(1, 1)
         audio_thread = AudioThread(mp4_filename)
         try:
-            if sys.platform.lower() == "linux":
+            # this probably work in linux system
+            if sys.platform.lower() == "linux" and not self.term.is_tty():
                 os.system("jack_control stop > /dev/null")
                 os.system("pulseaudio --kill")
                 os.system("jack_control start > /dev/null")
@@ -311,9 +331,9 @@ class TermPix:
             audio_thread.is_terminated = True
             audio_thread.join()
             pass
-        self.show_cursor()
-        self.clear_screen()
-        self.gotoxy(1,1)
+        self.term.show_cursor()
+        self.term.clear_screen()
+        self.term.gotoxy(1, 1)
 
     def play_video(self, mp4_filename, true_color=True, mirror=False):
         self.video_wrapper(mp4_filename, self._play_video, true_color, mirror)
@@ -329,7 +349,7 @@ class TermPix:
         proposed_audio_filename = "%s/tp_%s%s" % (temp_dir, timestamp, '.wav')
 
         if mp4_filename.lower() == 'camera':
-            if self.is_tty():
+            if self.term.is_tty():
                 raise Exception("start camera via tty is not allowed")
             v_in = imageio.get_reader('<video0>')
             support_audio = False
@@ -347,7 +367,7 @@ class TermPix:
             support_audio = True
 
         # audio part goes here
-        if support_audio and not self.is_tty(): # you wont get audio from ssh client
+        if support_audio and not self.term.is_tty(): # you wont get audio from ssh client
             audio_thread.audio_filename = proposed_audio_filename
             audio_thread.start()
 
@@ -365,7 +385,7 @@ class TermPix:
                     im = im.transpose(Image.FLIP_LEFT_RIGHT)
                 curr_tx_im = self.draw_tx_im(im, true_color=true_color)
                 print(curr_tx_im)
-                self.gotoxy(1,1)
+                self.term.gotoxy(1,1)
             # else: 
                 # current_time is left behind, skip the drawing
         
@@ -386,7 +406,8 @@ if __name__ == "__main__":
     parser.add_argument("--width", type=int, default=0)
     parser.add_argument("--height", type=int, default=0)
     parser.add_argument("--show-grid", action='store_true')
-    parser.add_argument("--mirror", action='store_true')
+    parser.add_argument("--mirror", action='store_true') # only used in the camera mode
+    parser.add_argument("--interactive-mode", "-i", action='store_true')
 
     args = vars(parser.parse_args())
     if (args["filename"].lower().endswith("mp4") or 
@@ -398,12 +419,19 @@ if __name__ == "__main__":
             mirror = args["mirror"]
         )
     else:
-        tx_im = TermPix().draw_tx_im(
-            args["filename"], 
-            width = args["width"],
-            height = args["height"],
-            true_color = args["true_color"],
-            show_grid= args["show_grid"]
-        )
-        print(tx_im)
+        if not args["interactive_mode"]:
+            tx_im = TermPix().draw_tx_im(
+                args["filename"], 
+                width = args["width"],
+                height = args["height"],
+                true_color = args["true_color"],
+                show_grid= args["show_grid"]
+            )
+            print(tx_im)
+        else:
+            TermPix().view_tx_im(
+                args["filename"],
+                true_color = args["true_color"],
+                show_grid = args["show_grid"]
+            )
     
