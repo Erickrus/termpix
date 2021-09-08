@@ -4,7 +4,7 @@ Draw images in an ANSI terminal! Requires that your terminal can show ANSI colou
 
 Usage: `python3.9 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
 
-filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. If you type camera as the filename, you can view your webcam video.
+filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. It also supports HEIC format, if `pyheif` and `libffi libheif` are installed. If you type camera as the filename, you can view your webcam video.
 
 It will fill as much of the terminal as possible, while keeping the aspect ratio of the input image. Use --width or --height to override this.
 
@@ -23,7 +23,7 @@ https://github.com/hopey-dishwasher/termpix
 # Installing
 `# if you want to play video, followings are required`
 
-`# apt install portaudio ffmpeg`
+`# apt install -y portaudio ffmpeg`
 
 `pip3 install -r requirements.txt`
 
