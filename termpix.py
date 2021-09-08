@@ -37,6 +37,10 @@ from ctypes import *
 from PIL import Image
 from io import BytesIO
 
+try:
+    import pyheif
+except:
+    pass   
 
 class AudioThread(threading.Thread):
     def __init__(self, audio_filename):
@@ -128,6 +132,13 @@ class Terminal:
 class TermPix:
     
     def __init__(self):
+
+        self.heif_supported = True
+        try:
+            import pyheif
+        except:
+            self.heif_supported = False
+
         self.term = Terminal()
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info()
         
@@ -235,12 +246,20 @@ class TermPix:
             im = im_filename.convert('RGB')
         else:
             if im_filename.lower().startswith("http"):
-                data =  urllib.request.urlopen(im_filename).read()
-                b = BytesIO()
-                b.write(data)
-                im = Image.open(b).convert("RGB")
+                try:
+                    data =  urllib.request.urlopen(im_filename).read()
+                    b = BytesIO()
+                    b.write(data)
+                    im = Image.open(b).convert("RGB")
+                except:
+                    print("failed to load url: %s" % im_filename)
+                    sys.exit(1)
             else:
-                im = Image.open(im_filename).convert("RGB")
+                if im_filename.lower().endswith("heic") and self.heif_supported:
+                    im = pyheif.read(im_filename)
+                    im = Image.frombytes(mode = im.mode, size=im.size, data = im.data).convert("RGB")
+                else:
+                    im = Image.open(im_filename).convert("RGB")
         
         im_width, im_height = im.size
         im_wh_ratio = float(im_width) / float(im_height)
@@ -407,7 +426,6 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=0)
     parser.add_argument("--show-grid", action='store_true')
     parser.add_argument("--mirror", action='store_true') # only used in the camera mode
-    parser.add_argument("--interactive-mode", "-i", action='store_true')
 
     args = vars(parser.parse_args())
     if (args["filename"].lower().endswith("mp4") or 
@@ -419,19 +437,12 @@ if __name__ == "__main__":
             mirror = args["mirror"]
         )
     else:
-        if not args["interactive_mode"]:
-            tx_im = TermPix().draw_tx_im(
-                args["filename"], 
-                width = args["width"],
-                height = args["height"],
-                true_color = args["true_color"],
-                show_grid= args["show_grid"]
-            )
-            print(tx_im)
-        else:
-            TermPix().view_tx_im(
-                args["filename"],
-                true_color = args["true_color"],
-                show_grid = args["show_grid"]
-            )
+        tx_im = TermPix().draw_tx_im(
+            args["filename"], 
+            width = args["width"],
+            height = args["height"],
+            true_color = args["true_color"],
+            show_grid= args["show_grid"]
+        )
+        print(tx_im)
     
