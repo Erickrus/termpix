@@ -1,3 +1,4 @@
+#!/usr/local/bin/python3
 # -*- coding: utf-8 -*-
 '''
 TermPix
@@ -238,7 +239,7 @@ class TermPix:
                 int(pixel)
             )
     
-    def draw_tx_im(self, im_filename, width=0, height=0, true_color=False, show_grid=False):
+    def draw_tx_im(self, im_filename, width=0, height=0, true_color=False, show_grid=False, cinema_mode=False):
         self.screen_width, self.screen_height, self.wh_ratio = self._update_terminal_info(show_grid)
        
         # matches PIL ImageFile class
@@ -273,7 +274,6 @@ class TermPix:
                 im = im.resize([screen_width, int(screen_width / im_wh_ratio)], Image.ANTIALIAS)
             else:
                 im = im.resize([int(screen_height * im_wh_ratio), screen_height], Image.ANTIALIAS)
-        
         tx_width, tx_height = im.size
         data = np.array(im)
         text_mat = np.zeros([tx_width, int(math.ceil(float(tx_height)/2.))*2]).tolist()
@@ -304,7 +304,11 @@ class TermPix:
                         self.block+ \
                         self.csi + '0' + self.sgr
                 lines.append(line)
-                
+       
+        if cinema_mode:
+            show_grid = False
+            lines = self.cinema(im, lines, true_color)
+
         if show_grid:
             for i in range(len(lines)):
                 lines[i] = ("%2d" % (i*2))+lines[i]
@@ -312,8 +316,44 @@ class TermPix:
             for i in range(tx_width//2):
                 line += "%-2d" % (i*2)
             lines.append(line)
-            
+         
         return "\n".join(lines)
+
+    def cinema(self, im, lines, true_color):
+        # use text approach to center the image
+        # in the mean time, fill the rest screen with black_block
+        c = [0, 0, 0]
+        if not true_color:
+            c = [self._find_color_index(np.array(c))]
+
+        black_block = "".join([
+            self._set_tx_pixel(c, self.color_mode[0]),
+            self._set_tx_pixel(c, self.color_mode[1]),
+            self.block,
+            self.csi + '0' + self.sgr
+        ])
+        black_block_len = len(black_block)
+
+        # horizontal padding
+        horiz_padding_size = self.screen_width // 2 - im.size[0] // 2
+        horiz_line = ""
+        for i in range(horiz_padding_size):
+            horiz_line += black_block
+        for i in range(len(lines)):
+            lines[i] = horiz_line + lines[i] + horiz_line[:-black_block_len]
+
+        # vertical padding
+        vert_line = ""
+        for i in range(self.screen_width):
+            vert_line += black_block
+        vert_line_size = self.screen_height//4 - len(lines) // 2
+        for _ in range(vert_line_size):
+            lines.insert(0, vert_line)
+       
+        for _ in range(self.screen_height//2 - len(lines)):
+                lines.append(vert_line)
+        return lines
+
     
     # this function is rewritten in python with numpy
     # referenced
@@ -402,7 +442,7 @@ class TermPix:
                 im = Image.fromarray(im)
                 if mp4_filename.lower() == 'camera' and mirror:
                     im = im.transpose(Image.FLIP_LEFT_RIGHT)
-                curr_tx_im = self.draw_tx_im(im, true_color=true_color)
+                curr_tx_im = self.draw_tx_im(im, true_color=true_color, cinema_mode=True)
                 print(curr_tx_im)
                 self.term.gotoxy(1,1)
             # else: 
