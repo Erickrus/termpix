@@ -466,6 +466,8 @@ if __name__ == "__main__":
     parser.add_argument("--height", type=int, default=0)
     parser.add_argument("--show-grid", action='store_true')
     parser.add_argument("--mirror", action='store_true') # only used in the camera mode
+    # parser.add_argument("--cinema_mode", "-c")
+    parser.add_argument("--output", "-o", type=str, nargs=1)
 
     args = vars(parser.parse_args())
     if (args["filename"].lower().endswith("mp4") or 
@@ -484,5 +486,9 @@ if __name__ == "__main__":
             true_color = args["true_color"],
             show_grid= args["show_grid"]
         )
-        print(tx_im)
+        if args["output"] != None:
+            with open(args["output"][0], "w") as f:
+                f.write(tx_im)
+        else:
+            print(tx_im)
     
