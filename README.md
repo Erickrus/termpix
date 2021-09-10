@@ -2,7 +2,7 @@
 
 Draw images in an ANSI terminal! Requires that your terminal can show ANSI colours, and uses a font that can show the 'bottom half block' character (▄).
 
-Usage: `python3.9 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]`
+Usage: `python3.9 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]  [--output output.txt]`
 
 filename or url can be any `image` file readable by the python 'PIL' library or can be any `video` file readable by `imageio`. It also supports HEIC format, if `pyheif` and `libffi libheif` are installed. If you type camera as the filename, you can view your webcam video.
 
