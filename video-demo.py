@@ -63,16 +63,16 @@ class AudioThread(threading.Thread):
         os.system("rm %s" % self.audio_filename)
 
 '''
-apt install sox ffmpeg 
+apt install sox ffmpeg
 apt install portaudio
 pip3 install imageio imageio-ffmpeg pyaudio
 '''
 
 def wrapper(mp4_filename, func):
     t = TermPix()
-    t.hide_cursor()
-    t.clear_screen()
-    t.gotoxy(1,1)
+    t.term.hide_cursor()
+    t.term.clear_screen()
+    t.term.gotoxy(1,1)
     audio_thread = AudioThread(mp4_filename)
     try:
         func(t, mp4_filename, audio_thread) # play_video
@@ -80,9 +80,9 @@ def wrapper(mp4_filename, func):
         audio_thread.is_terminated = True
         audio_thread.join()
         pass
-    t.show_cursor()
-    t.clear_screen()
-    t.gotoxy(1,1)
+    t.term.show_cursor()
+    t.term.clear_screen()
+    t.term.gotoxy(1,1)
 
 def play_video(t, mp4_filename, audio_thread):
 
@@ -129,10 +129,10 @@ def play_video(t, mp4_filename, audio_thread):
         if (current_time - play_start_time)/sec <= float(i+1) * frame_duration:
             im = Image.fromarray(im)
             print(t.draw_tx_im(im, true_color=True))
-            t.gotoxy(1,1)
-        # else: 
+            t.term.gotoxy(1,1)
+        # else:
             # current_time is left behind, skip the drawing
-        
+
         current_time = datetime.datetime.now()
         sleep_time = frame_duration - (current_time - play_start_time)/sec + float(i) * frame_duration
         if sleep_time > 0.:
@@ -144,4 +144,3 @@ def main(mp4_filename):
 
 if __name__ == "__main__":
     main(sys.argv[1])
-
