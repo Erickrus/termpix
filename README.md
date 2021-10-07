@@ -20,10 +20,10 @@ This library is also extended to play video in terminal (with audio), you can tr
 This project is much inspired by the following repository: 
 https://github.com/hopey-dishwasher/termpix
 
-# Installing 
+# Installation
 for ubuntu, perform commands below to install software packages at first:
 ```bash
-apt-get install -y portaudio19-dev ffmpeg
+sudo apt-get install -y portaudio19-dev ffmpeg
 ```
 then install python packages (recommend to install them in your own virtual environment):
 ```bash
