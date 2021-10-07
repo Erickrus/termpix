@@ -25,7 +25,7 @@ for ubuntu, perform commands below to install software packages at first:
 ```bash
 sudo apt-get install -y portaudio19-dev ffmpeg
 ```
-then install python packages (recommend to install them in your own virtual environment):
+then install python packages (recommend to install them in your own virtual environment, python3.x):
 ```bash
 pip3 install -r requirements.txt
 ```
