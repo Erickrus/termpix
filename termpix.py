@@ -24,7 +24,7 @@ limitations under the License.
 __author__ = "Hu, Ying-Hao (hyinghao@hotmail.com)"
 __copyright__ = "Copyright 2021 Hu, Ying-Hao"
 __license__ = "the Apache License, Version 2.0"
-__version__ = "0.5.0"
+__version__ = "0.5.2"
 
 import argparse
 import datetime
