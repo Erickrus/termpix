@@ -24,7 +24,7 @@ limitations under the License.
 __author__ = "Hu, Ying-Hao<hyinghao@hotmail.com>"
 __copyright__ = "Copyright 2021 Hu, Ying-Hao"
 __license__ = "the Apache License, Version 2.0"
-__version__ = "0.5.2"
+__version__ = "0.5.3"
 
 import argparse
 import datetime
@@ -410,8 +410,10 @@ class TermPix:
         ext = os.path.splitext(mp4_filename)[-1]
 
         temp_dir = tempfile.gettempdir()
-        proposed_video_filename = "%s/tp_%s%s" % (temp_dir, timestamp, ext.lower())
-        proposed_audio_filename = "%s/tp_%s%s" % (temp_dir, timestamp, '.wav')
+        #proposed_video_filename = "%s/tp_%s%s" % (temp_dir, timestamp, ext.lower())
+        #proposed_audio_filename = "%s/tp_%s%s" % (temp_dir, timestamp, '.wav')
+        proposed_video_filename = os.path.join(temp_dir, "tp_%s%s".format(timestamp,ext.lower()))
+        proposed_audio_filename = os.path.join(temp_dir, "tp_%s.wav".format(timestamp))
 
         if mp4_filename.lower() == 'camera':
             if self.term.is_tty():
