@@ -461,7 +461,7 @@ class TermPix:
         v_in.close()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         allow_abbrev=False,
         usage='python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]'
@@ -497,3 +497,6 @@ if __name__ == "__main__":
                 f.write(tx_im)
         else:
             print(tx_im)
+
+if __name__ == "__main__":
+    main()
