@@ -3,7 +3,7 @@
 '''
 TermPix
 Author: Hu, Ying-Hao (hyinghao@hotmail.com)
-Version: 0.5
+Version: 0.5.2
 Last modification date: 2021-08-21
 
 Copyright 2021 Hu, Ying-Hao
@@ -21,6 +21,11 @@ See the License for the specific language governing permissions and
 limitations under the License.
 
 '''
+__author__ = "Hu, Ying-Hao<hyinghao@hotmail.com>"
+__copyright__ = "Copyright 2021 Hu, Ying-Hao"
+__license__ = "the Apache License, Version 2.0"
+__version__ = "0.5.2"
+
 import argparse
 import datetime
 import math
@@ -455,7 +460,7 @@ class TermPix:
         v_in.close()
 
 
-if __name__ == "__main__":
+def main():
     parser = argparse.ArgumentParser(
         allow_abbrev=False, 
         usage='python3.6 termpix.py <filename|url> [--width <width>] [--height <height>] [--true-color|--true-colour]'
@@ -491,4 +496,7 @@ if __name__ == "__main__":
                 f.write(tx_im)
         else:
             print(tx_im)
-    
+
+if __name__ == "__main__":
+    main()
+
