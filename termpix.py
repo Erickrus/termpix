@@ -3,7 +3,7 @@
 '''
 TermPix
 Author: Hu, Ying-Hao (hyinghao@hotmail.com)
-Version: 0.5
+Version: 0.5.2
 Last modification date: 2021-08-21
 
 Copyright 2021 Hu, Ying-Hao
@@ -25,6 +25,7 @@ __author__ = "Hu, Ying-Hao<hyinghao@hotmail.com>"
 __copyright__ = "Copyright 2021 Hu, Ying-Hao"
 __license__ = "the Apache License, Version 2.0"
 __version__ = "0.5.3"
+
 
 import argparse
 import datetime
